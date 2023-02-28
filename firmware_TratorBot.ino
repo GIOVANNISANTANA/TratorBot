@@ -1,23 +1,3 @@
-/*
-  RC Remote Car
-  fsi6x-RC-car-spin.ino
-  Uses Flysky FS-I6X RC receiver & FS-I6X 6-ch Controller
-  Uses TB6612FNG H-Bridge Motor Controller
-  Drives two DC Motors
-
-  Two Drive Modes - Normal and Spin
-  Map channel 6 on controller to switch SWA for mode control
-
-  Right stick controls direction in Normal mode (CH1 & CH2)
-  VRA controls speed and direction in Spin mode (CH5)
-  Left stick is acceleration in both modes (CH3)
-
-  Channel functions by Ricardo Paiva - https://gist.github.com/werneckpaiva/
-
-  DroneBot Workshop 2021
-  https://dronebotworkshop.com
-*/
-
 // Include iBus Library
 #include <IBusBM.h>
 
@@ -47,7 +27,7 @@ const byte R_EN_DIR = 5;  //   AMARELO
 const byte R_PWM_ESQ = 4;
 const byte L_PWM_ESQ = 3;
 //const byte R_EN_ESQ = 2;
-const byte L_EN_ESQ = 6;
+const byte L_EN_ESQ = 2;
 
 // Sensor de corrente para os motores
 const int Sensor_I_M_DIR = A1;
