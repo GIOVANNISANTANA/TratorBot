@@ -13,21 +13,18 @@ int rcCH4 = 0;  // Joystick esquedo eixo x, SEM USO
 int rcCH5 = 0;   // VRA Pot esquero, Definir potencia do pulverizador
 int rcCH6 = 0;  // VRB Pot direito, Definir potencia do adubador
 
-
-// LED Connection
-
-
 // Motor RIGHT Control Connections
 const byte R_PWM_DIR = 7; //   VERDE
 const byte L_PWM_DIR = 6; //   LARANJA
 const byte R_EN_DIR = 5;  //   AMARELO
-//const byte L_EN_DIR = 10;  //   CINZA
 
 // Motor LEFT Control Connections
 const byte R_PWM_ESQ = 4;
 const byte L_PWM_ESQ = 3;
-//const byte R_EN_ESQ = 2;
 const byte L_EN_ESQ = 2;
+
+//SPRAY PWM output
+const byte Spray = 8;
 
 // Sensor de corrente para os motores
 const int Sensor_I_M_DIR = A1;
@@ -40,48 +37,36 @@ const int Sensor_V_BAT = A0;
 int M_Speed_Esq = 0;
 int M_Speed_Dir = 0;
 
-// Motor Direction Values - 0 = backward, 1 = forward
+// Motor Direction Values: 0 = backward, 1 = forward
 
 int M_Dir_Esq = 1;
 int M_Dir_Dir = 1;
 
 // Control Motor A
-void mControl_Esq(int mspeed, int mdir) {
-
-  // Determine direction
-  if (mdir == 0) {
+void mControl_Esq(int mspeed, int mdir) {  
+  if (mdir == 0) {  // Determine direction
     // Motor backward
-    digitalWrite(L_PWM_ESQ, LOW); //
-//    digitalWrite(L_EN_ESQ, LOW); //
-//    digitalWrite(R_EN_ESQ, HIGH); //
-    analogWrite(R_PWM_ESQ, mspeed); //
-
+    digitalWrite(L_PWM_ESQ, LOW); 
+    //digitalWrite(L_EN_ESQ, LOW);
+    analogWrite(R_PWM_ESQ, mspeed);
   } else {
     // Motor forward
     digitalWrite(R_PWM_ESQ, LOW);
-//    digitalWrite(R_EN_ESQ, LOW);
-    digitalWrite(L_EN_ESQ, HIGH); //
-    analogWrite(L_PWM_ESQ, mspeed); //
+    digitalWrite(L_EN_ESQ, HIGH); 
+    analogWrite(L_PWM_ESQ, mspeed); 
   }
 }
 
 // Control Motor B
 void mControl_Dir(int mspeed, int mdir) {
-
-  // Determine direction
-  if (mdir == 0) {
-    // Motor backward
-    
+  if (mdir == 0) {  // Determine direction
+    // Motor backward    
     digitalWrite(R_PWM_DIR, LOW);
-//    digitalWrite(R_EN_DIR, LOW);
-//    digitalWrite(L_EN_DIR, HIGH);
-
+    //digitalWrite(R_EN_DIR, LOW);
     analogWrite(L_PWM_DIR, mspeed);
-
   } else {
     // Motor forward
     digitalWrite(L_PWM_DIR, LOW);
-//    digitalWrite(L_EN_DIR, LOW);
     digitalWrite(R_EN_DIR, HIGH);
     analogWrite(R_PWM_DIR, mspeed);
   }
@@ -102,17 +87,14 @@ bool readSwitch(byte channelInput, bool defaultValue) {
   return (ch > 50);
 }
 
-void setup()
-
-{
+void setup(){
+  
 pinMode(R_PWM_DIR,OUTPUT);
 pinMode(L_PWM_DIR,OUTPUT);
 pinMode(R_EN_DIR,OUTPUT);
-//pinMode(L_EN_DIR,OUTPUT);
 
 pinMode(R_PWM_ESQ,OUTPUT);
 pinMode(L_PWM_ESQ,OUTPUT);
-//pinMode(R_EN_ESQ,OUTPUT);
 pinMode(L_EN_ESQ,OUTPUT);
 
 pinMode(Sensor_I_M_DIR,INPUT);
@@ -126,10 +108,7 @@ pinMode(Sensor_V_BAT,INPUT);
   // Attach iBus object to serial port
   ibus.begin(Serial1);
 
-  // Set all the motor control pins to outputs
-
-  // Set LED pin as output
-
+  // Set all the motor control pins to outputp
   // Keep motors on standby for two seconds & flash LED
 }
 
@@ -167,11 +146,6 @@ void att_sensores() {
 }
 
 void loop() {
-  //digitalWrite(R_EN_DIR, HIGH);
-  //digitalWrite(L_EN_ESQ, HIGH);
-
-
-
   att_canais();
   int zona_morta = 4;
 
