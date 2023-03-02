@@ -9,14 +9,14 @@ IBusBM ibus;
 int rcCH1 = 0;   // Joystick Eixo X, esquerda e direita
 int rcCH2 = 0;   // Joystick Eixo Y, pra frente e pra tras
 bool rcCH3 = 0;  // Utilizado para ligar e desligar
-int rcCH4 = 0;  // Joystick esquedo eixo x, SEM USO
+int rcCH4 = 0;   // Joystick esquedo eixo x, SEM USO
 int rcCH5 = 0;   // VRA Pot esquero, Definir potencia do pulverizador
-int rcCH6 = 0;  // VRB Pot direito, Definir potencia do adubador
+int rcCH6 = 0;   // VRB Pot direito, Definir potencia do adubador
 
 // Motor RIGHT Control Connections
-const byte R_PWM_DIR = 7; //   VERDE
-const byte L_PWM_DIR = 6; //   LARANJA
-const byte R_EN_DIR = 5;  //   AMARELO
+const byte R_PWM_DIR = 7;  //   VERDE
+const byte L_PWM_DIR = 6;  //   LARANJA
+const byte R_EN_DIR = 5;   //   AMARELO
 
 // Motor LEFT Control Connections
 const byte R_PWM_ESQ = 4;
@@ -42,25 +42,28 @@ int M_Speed_Dir = 0;
 int M_Dir_Esq = 1;
 int M_Dir_Dir = 1;
 
+// SPRAY control - Start at zero
+int controlSpray = 0;
+
 // Control Motor A
-void mControl_Esq(int mspeed, int mdir) {  
+void mControl_Esq(int mspeed, int mdir) {
   if (mdir == 0) {  // Determine direction
     // Motor backward
-    digitalWrite(L_PWM_ESQ, LOW); 
+    digitalWrite(L_PWM_ESQ, LOW);
     //digitalWrite(L_EN_ESQ, LOW);
     analogWrite(R_PWM_ESQ, mspeed);
   } else {
     // Motor forward
     digitalWrite(R_PWM_ESQ, LOW);
-    digitalWrite(L_EN_ESQ, HIGH); 
-    analogWrite(L_PWM_ESQ, mspeed); 
+    digitalWrite(L_EN_ESQ, HIGH);
+    analogWrite(L_PWM_ESQ, mspeed);
   }
 }
 
 // Control Motor B
 void mControl_Dir(int mspeed, int mdir) {
   if (mdir == 0) {  // Determine direction
-    // Motor backward    
+    // Motor backward
     digitalWrite(R_PWM_DIR, LOW);
     //digitalWrite(R_EN_DIR, LOW);
     analogWrite(L_PWM_DIR, mspeed);
@@ -70,6 +73,12 @@ void mControl_Dir(int mspeed, int mdir) {
     digitalWrite(R_EN_DIR, HIGH);
     analogWrite(R_PWM_DIR, mspeed);
   }
+}
+
+void cSpray(int control){
+  //if(control > 2){
+    analogWrite(Spray, control);
+  //}
 }
 
 // Read the number of a given channel and convert to the range provided.
@@ -87,20 +96,20 @@ bool readSwitch(byte channelInput, bool defaultValue) {
   return (ch > 50);
 }
 
-void setup(){
-  
-pinMode(R_PWM_DIR,OUTPUT);
-pinMode(L_PWM_DIR,OUTPUT);
-pinMode(R_EN_DIR,OUTPUT);
+void setup() {
 
-pinMode(R_PWM_ESQ,OUTPUT);
-pinMode(L_PWM_ESQ,OUTPUT);
-pinMode(L_EN_ESQ,OUTPUT);
+  pinMode(R_PWM_DIR, OUTPUT);
+  pinMode(L_PWM_DIR, OUTPUT);
+  pinMode(R_EN_DIR, OUTPUT);
 
-pinMode(Sensor_I_M_DIR,INPUT);
-pinMode(Sensor_I_M_ESQ,INPUT);
-pinMode(Sensor_V_BAT,INPUT);  
-  
+  pinMode(R_PWM_ESQ, OUTPUT);
+  pinMode(L_PWM_ESQ, OUTPUT);
+  pinMode(L_EN_ESQ, OUTPUT);
+
+  pinMode(Sensor_I_M_DIR, INPUT);
+  pinMode(Sensor_I_M_ESQ, INPUT);
+  pinMode(Sensor_V_BAT, INPUT);
+
 
   // Start serial monitor for debugging
   Serial.begin(115200);
@@ -142,7 +151,6 @@ void att_canais() {
 }
 
 void att_sensores() {
-
 }
 
 void loop() {
@@ -151,10 +159,10 @@ void loop() {
 
   //############################# JOYSTICK FRENTE E TRÁS == PARA FRENTE ################
 
-  if (rcCH2 > 4) { // Se o eio Y estiver positivo vai pra frente tendendo a esquerda ou a direita a depender do eixo x
+  if (rcCH2 > 4) {  // Se o eio Y estiver positivo vai pra frente tendendo a esquerda ou a direita a depender do eixo x
 
-    M_Dir_Esq = 1; // 1 == FRENTE // 0 == TRAS
-    M_Dir_Dir = 1; // 1 == FRENTE // 0 == TRAS
+    M_Dir_Esq = 1;  // 1 == FRENTE // 0 == TRAS
+    M_Dir_Dir = 1;  // 1 == FRENTE // 0 == TRAS
 
     if (rcCH1 > zona_morta) {
 
@@ -174,7 +182,6 @@ void loop() {
       Serial.println("ROBO EM FRENTE PRA ESQUERDA");
       M_Speed_Esq = rcCH2 - (abs(rcCH1) / 2);
       M_Speed_Dir = rcCH2;
-
     }
 
     //############################# JOYSTICK FRENTE E TRÁS == MEIO ################
@@ -184,41 +191,35 @@ void loop() {
     if (rcCH1 > zona_morta) {
       Serial.println("ROBO PARA A DIREITA");
 
-      M_Dir_Esq = 1; // 1 == FRENTE // 0 == TRAS // MOTOR ESQUERDO
-      M_Dir_Dir = 0; // 1 == FRENTE // 0 == TRAS // MOTOR DIREITO
+      M_Dir_Esq = 1;  // 1 == FRENTE // 0 == TRAS // MOTOR ESQUERDO
+      M_Dir_Dir = 0;  // 1 == FRENTE // 0 == TRAS // MOTOR DIREITO
 
       M_Speed_Esq = rcCH1;
       M_Speed_Dir = rcCH1;
 
-    }
-    else if ((rcCH1 <= zona_morta) && (rcCH1 >= -zona_morta)) {
+    } else if ((rcCH1 <= zona_morta) && (rcCH1 >= -zona_morta)) {
       Serial.println("ROBO PARADO");
 
       M_Speed_Esq = 0;
       M_Speed_Dir = 0;
 
-    }
-    else if (rcCH1 < -zona_morta) {
+    } else if (rcCH1 < -zona_morta) {
       Serial.println("ROBO PRA ESQUERDA");
 
-      M_Dir_Esq = 0; // 1 == FRENTE // 0 == TRAS // MOTOR ESQUERDO
-      M_Dir_Dir = 1; // 1 == FRENTE // 0 == TRAS // MOTOR DIREITO
+      M_Dir_Esq = 0;  // 1 == FRENTE // 0 == TRAS // MOTOR ESQUERDO
+      M_Dir_Dir = 1;  // 1 == FRENTE // 0 == TRAS // MOTOR DIREITO
 
       M_Speed_Esq = abs(rcCH1);
       M_Speed_Dir = abs(rcCH1);
-
     }
 
   }
-  
- // ##########ROBO EM RÉ#########
- 
-  else if (rcCH2 < -zona_morta) { // Se o eixo X estiver abaixo do meio é o motor para trás
 
-    
+  // ##########ROBO EM RÉ#########
 
+  else if (rcCH2 < -zona_morta) {  // Se o eixo X estiver abaixo do meio é o motor para trás
     if (rcCH1 > zona_morta) {
-      
+
       Serial.println("ROBO EM RE PRA DIREITA");
 
       M_Speed_Esq = abs(rcCH2);
@@ -226,10 +227,10 @@ void loop() {
 
 
     } else if ((rcCH1 <= zona_morta) && (rcCH1 >= -zona_morta)) {
-      
-      M_Dir_Esq = 0; // 1 == FRENTE // 0 == TRAS
-      M_Dir_Dir = 0; // 1 == FRENTE // 0 == TRAS
-      
+
+      M_Dir_Esq = 0;  // 1 == FRENTE // 0 == TRAS
+      M_Dir_Dir = 0;  // 1 == FRENTE // 0 == TRAS
+
       Serial.println("ROBO EM RE ");
       M_Speed_Esq = abs(rcCH2);
       M_Speed_Dir = abs(rcCH2);
@@ -239,17 +240,22 @@ void loop() {
       Serial.println("ROBO EM RE PRA ESQUERDA");
       M_Speed_Esq = abs(rcCH2) - (abs(rcCH1) / 2);
       M_Speed_Dir = abs(rcCH2);
-
     }
   }
- 
+
+//  else if(rcCH5 > 10){
+      Serial.println("Pulverizador acionado");
+      controlSpray = rcCH5;
+  //}
 
   M_Speed_Dir = constrain(M_Speed_Dir, 0, 255);
   M_Speed_Esq = constrain(M_Speed_Esq, 0, 255);
-  
+  controlSpray = constrain(controlSpray, 0, 255);
+
   mControl_Dir(M_Speed_Dir, M_Dir_Dir);
   mControl_Esq(M_Speed_Esq, M_Dir_Esq);
-  
+  cSpray(controlSpray);
+
   Serial.println(" ");
   Serial.print(" Dire_ESQ: ");
   Serial.print(M_Dir_Esq);
@@ -260,5 +266,7 @@ void loop() {
   Serial.print(" Speed_Dir: ");
   Serial.println(M_Speed_Dir);
   Serial.println(" ");
-
+  Serial.print(" pulverizador: ");
+  Serial.println(controlSpray);
+  Serial.println(" ");  
 }
