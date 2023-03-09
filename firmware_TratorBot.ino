@@ -83,18 +83,6 @@ void mControl_Dir(int mspeed, int mdir) {
     digitalWrite(R_EN_DIR, LOW);
     break;    
   }
-  /*
-  if (mdir == 0) {  // Determine direction
-    // Motor backward
-    digitalWrite(L_PWM_DIR, LOW);
-    //digitalWrite(R_EN_DIR, LOW);
-    analogWrite(R_PWM_DIR, mspeed);
-  } else {
-    // Motor forward
-    digitalWrite(R_PWM_DIR, LOW);
-    digitalWrite(R_EN_DIR, HIGH);
-    analogWrite(L_PWM_DIR, mspeed);
-  }*/
 }
 
 void cSpray(int control) {
@@ -155,89 +143,102 @@ void att_canais() {
 }
 
 void controless() {
-static byte estado_controless = 0;
-switch (estado_controless){
-   
+static byte estado = 0;
+//  estado = 0 -> robo parado
+//  estado = 1 -> robo para frente
+//  estado = 2 -> robo para tras
+//  estado = 3 -> robo girando
+
+switch (estado){   
     case 0:
-    if(x>zm){
+    if(rcCH2 > zona_morta ){
       estado = 1;
     }
-    if (x<zm){
+    else if (rcCH2 < -zona_morta){
       estado = 2;
+    }else if(rcCH1 > zona_morta || rcCH1 < -zona_morta){
+      estado = 3; 
+    }else{
+      M_Dir_Dir = 2;
+      M_Dir_Esq = 2;
+      M_Speed_Esq = 0;
+      M_Speed_Dir = 0;    
     }
+    break;
+    case 1:
+    if (rcCH1 <= zona_morta && rcCH1 >= -zona_morta && rcCH2 <= zona_morta && rcCH2 >= -zona_morta){
+    estado = 0;     
+    }else if(rcCH2 > zona_morta){
+      M_Dir_Esq = 1;
+      M_Dir_Dir = 1;  
+      M_Speed_Esq = abs(rcCH2);
+      M_Speed_Dir = abs(rcCH2);
+      if(rcCH1 > zona_morta){
+        M_Speed_Esq = abs(rcCH2) ;
+        M_Speed_Dir = abs(rcCH2) - rcCH1;
+      }else if(rcCH1 < -zona_morta){
+        M_Speed_Esq = abs(rcCH2) - abs(rcCH1);
+        M_Speed_Dir = abs(rcCH2);
+      }
+    }  
+    break;
 
-break;
- case 1:
-  if ((x<zm)&& (y<zm)){
-estado = 0;     
-  }
-
-  break;
-
-
-
-
-
-
-
-
+    case 2:
+    if (rcCH1 <= zona_morta && rcCH1 >= -zona_morta && rcCH2 <= zona_morta && rcCH2 >= -zona_morta){
+    estado = 0;     
+    }else if(rcCH2 < zona_morta){
+      M_Dir_Esq = 0;
+      M_Dir_Dir = 0;  
+      M_Speed_Esq = abs(rcCH2) ;
+      M_Speed_Dir = abs(rcCH2);
+      if(rcCH1 > zona_morta){
+        M_Speed_Esq = abs(rcCH2) ;
+        M_Speed_Dir = abs(rcCH2) - rcCH1;
+      }else if(rcCH1 < -zona_morta){
+        M_Speed_Esq = abs(rcCH2) - abs(rcCH1);
+        M_Speed_Dir = abs(rcCH2);
+      }
+    }
+    break;
   
+    case 3:
+      if (rcCH1 <= zona_morta && rcCH1 >= -zona_morta && rcCH2 <= zona_morta && rcCH2 >= -zona_morta){
+      estado = 0;     
+      }else if(rcCH1 > zona_morta){
+        M_Dir_Esq = 1;
+        M_Dir_Dir = 0;  
+        M_Speed_Esq = abs(rcCH1);
+        M_Speed_Dir = abs(rcCH1);
+      }else if(rcCH1 < - zona_morta){
+        M_Dir_Esq = 0;
+        M_Dir_Dir = 1;  
+        M_Speed_Esq = abs(rcCH1);
+        M_Speed_Dir = abs(rcCH1);
+      }
+      break;
+
 }
-  
 
-  if(rcCH1 <= zona_morta && rcCH1 >= -zona_morta && rcCH2 <= zona_morta && rcCH2 >= -zona_morta){
-    state = 0;
-    M_Dir_Dir = 2;
-    M_Dir_Esq = 2;
-  }else if((rcCH1 >= zona_morta || rcCH1 <= -zona_morta) && rcCH2 <= zona_morta && rcCH2 >= -zona_morta){
-      state = 1;
+if (rcCH5 > 10 && estado == 1) {
+    Serial.println("Pulverizador acionado");
+    controlSpray = rcCH5;
+  } else {
+    Serial.println("Pulverizador desligado");
+    controlSpray = 0;
   }
 
-    
+  Serial.println(estado);
 
-  if (state == 0){
-    if(rcCH2 > 0){
-      M_Dir_Esq = 1;
-      M_Dir_Dir = 1;  
-      M_Speed_Esq = abs(rcCH2);
-      M_Speed_Dir = abs(rcCH2);
-    }else{
-      M_Dir_Esq = 0;
-      M_Dir_Dir = 0;  
-      M_Speed_Esq = abs(rcCH2);
-      M_Speed_Dir = abs(rcCH2);
-    }
-    
-    
-  } else if(state == 1){
-    if(rcCH1 > 0){
-      M_Dir_Esq = 0;
-      M_Dir_Dir = 1;  
-      M_Speed_Esq = abs(rcCH1);
-      M_Speed_Dir = abs(rcCH1);
-    }else{
-      M_Dir_Esq = 1;
-      M_Dir_Dir = 0;  
-      M_Speed_Esq = abs(rcCH1);
-      M_Speed_Dir = abs(rcCH1);
-    }
-
-    Serial.print("rcCH1: ");
-    Serial.print(M_Speed_Dir);
-
-    Serial.print(" rcCH1: ");
-    Serial.println(rcCH1);
-
-  }
-
-  
-/*
-  Serial.print("CH1: ");
+  Serial.print("Vel_LEFT ");
   Serial.print(M_Speed_Esq);
+  Serial.print(" Vel_RIGH: ");
+  Serial.println(M_Speed_Dir);
 
-  Serial.print(" CH2: ");
+  Serial.print("ch1 ");
+  Serial.print(rcCH1);
+  Serial.print(" ch2: ");
   Serial.println(rcCH2);
-*/
+
 
   M_Speed_Dir = constrain(M_Speed_Dir, 0, 255);
   M_Speed_Esq = constrain(M_Speed_Esq, 0, 255);
