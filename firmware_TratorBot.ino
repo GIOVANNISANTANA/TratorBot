@@ -1,6 +1,7 @@
 // Include iBus Library
 #include <IBusBM.h>
 #define zona_morta 4
+#define soft 5
 
 // Create iBus Object
 IBusBM ibus;
@@ -142,6 +143,16 @@ void att_canais() {
   rcCH6 = readChannel(5, 0, 255, 0);
 }
 
+void pulverizar(){
+  if (rcCH5 > 10 && estado == 1) {
+      Serial.println("Pulverizador acionado");
+      controlSpray = rcCH5;
+    } else {
+      Serial.println("Pulverizador desligado");
+      controlSpray = 0;
+    }
+}
+
 void controless() {
 static byte estado = 0;
 //  estado = 0 -> robo parado
@@ -173,6 +184,7 @@ switch (estado){
       M_Dir_Dir = 1;  
       M_Speed_Esq = abs(rcCH2);
       M_Speed_Dir = abs(rcCH2);
+      pulverizar();
       if(rcCH1 > zona_morta){
         M_Speed_Esq = abs(rcCH2) ;
         M_Speed_Dir = abs(rcCH2) - rcCH1;
@@ -181,6 +193,7 @@ switch (estado){
         M_Speed_Dir = abs(rcCH2);
       }
     }  
+
     break;
 
     case 2:
@@ -207,25 +220,17 @@ switch (estado){
       }else if(rcCH1 > zona_morta){
         M_Dir_Esq = 1;
         M_Dir_Dir = 0;  
-        M_Speed_Esq = abs(rcCH1);
-        M_Speed_Dir = abs(rcCH1);
+        M_Speed_Esq = abs(rcCH1)/soft;
+        M_Speed_Dir = abs(rcCH1)/soft;
       }else if(rcCH1 < - zona_morta){
         M_Dir_Esq = 0;
         M_Dir_Dir = 1;  
-        M_Speed_Esq = abs(rcCH1);
-        M_Speed_Dir = abs(rcCH1);
+        M_Speed_Esq = abs(rcCH1)/soft;
+        M_Speed_Dir = abs(rcCH1)/soft;
       }
       break;
 
 }
-
-if (rcCH5 > 10 && estado == 1) {
-    Serial.println("Pulverizador acionado");
-    controlSpray = rcCH5;
-  } else {
-    Serial.println("Pulverizador desligado");
-    controlSpray = 0;
-  }
 
   Serial.println(estado);
 
