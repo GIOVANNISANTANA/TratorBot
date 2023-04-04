@@ -5,7 +5,24 @@
 #define soft 5
 #define soft_nav 2
 
+//constantes do PID
+#define   MIN_PWM 0
+#define   MAX_PWM 255
+#define   KP      0.2
+#define   KI      0.2
+#define   KD      0.005
 
+//variáveis PID
+double rpm;                       //variavel que recebe a rpm
+volatile byte pulsos;               
+unsigned long timeold;
+int pinoSensor = 2;               //pino que receberá a entrada do encoder
+unsigned int pulsosDisco = 600;   //quantos pulsos por revolução
+double velocidade = 0;            //velocidade que o motor se encontra
+double velocidadeSetpoint = 200;  //velocidade que o motor deve estar
+
+//Create PID object
+PID motorPID(&rpm, &velocidade, &velocidadeSetpoint, KP, KI, KD, DIRECT);
 
 // Create iBus Object
 IBusBM ibus;
@@ -52,6 +69,10 @@ int M_Dir_Dir = 1;
 int controlSpray = 0;
 
 int state = 0;
+
+void contador(){
+  pulsos++;     //incrementa contador do PID
+}
 
 void mControl_Esq(int mspeed, int mdir) {
   switch (mdir) {
@@ -125,10 +146,21 @@ void setup() {
   pinMode(Sensor_I_M_ESQ, INPUT);
   pinMode(Sensor_V_BAT, INPUT);
 
+  pinMode(pinoSensor, INPUT);
+  attachInterrupt(0, contador, FALLING);
+  pulsos = 0;
+  rpm = 0;
+  timeold = 0;
+
+  motorPID.SetOutputLimits(MIN_PWM, MAX_PWM);
+  motorPID.SetMode(AUTOMATIC);
+
   // Start serial monitor for debugging
   Serial.begin(115200);
   // Attach iBus object to serial port
   ibus.begin(Serial1);
+
+
 }
 
 void loop() {
