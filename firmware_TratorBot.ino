@@ -1,28 +1,14 @@
 // Include iBus Library
 #include <IBusBM.h>
-#include <PID_v1.h>
 #define zona_morta 4
 #define soft 5
 #define soft_nav 2
 
-//constantes do PID
-#define   MIN_PWM 0
-#define   MAX_PWM 255
-#define   KP      0.2
-#define   KI      0.2
-#define   KD      0.005
-
-//variáveis PID
-double rpm;                       //variavel que recebe a rpm
-volatile byte pulsos;               
-unsigned long timeold;
-int pinoSensor = 2;               //pino que receberá a entrada do encoder
-unsigned int pulsosDisco = 600;   //quantos pulsos por revolução
-double velocidade = 0;            //velocidade que o motor se encontra
-double velocidadeSetpoint = 200;  //velocidade que o motor deve estar
-
-//Create PID object
-PID motorPID(&rpm, &velocidade, &velocidadeSetpoint, KP, KI, KD, DIRECT);
+const int pinEntrada = 21; // Define o pino de entrada dos pulsos ocm interrupção
+volatile unsigned int contPulsos = 0; // Variável que conta os pulsos
+unsigned long tempoAnterior = 0; // Variável que armazena o tempo anterior
+unsigned int rpm = 0; // Variável que armazena as RPM
+long int pulsos = 0;
 
 // Create iBus Object
 IBusBM ibus;
@@ -146,19 +132,12 @@ void setup() {
   pinMode(Sensor_I_M_ESQ, INPUT);
   pinMode(Sensor_V_BAT, INPUT);
 
-  pinMode(pinoSensor, INPUT);
-  attachInterrupt(0, contador, FALLING);
-  pulsos = 0;
-  rpm = 0;
-  timeold = 0;
-
-  motorPID.SetOutputLimits(MIN_PWM, MAX_PWM);
-  motorPID.SetMode(AUTOMATIC);
-
   // Start serial monitor for debugging
   Serial.begin(115200);
   // Attach iBus object to serial port
   ibus.begin(Serial1);
+
+  attachInterrupt(digitalPinToInterrupt(pinEntrada), contarPulso, RISING); // Configura a interrupção
 
 
 }
@@ -167,6 +146,7 @@ void loop() {
   att_canais();
   //Mostrar();
   controless();
+  rotacoes();
 }
 
 void att_canais() {
@@ -180,10 +160,10 @@ void att_canais() {
 
 void pulverizar() {
   if (rcCH5 > 10 && state == 1) {
-    Serial.println("Pulverizador acionado");
+    //Serial.println("Pulverizador acionado");
     controlSpray = rcCH5;
   } else {
-      Serial.println("Pulverizador desligado");
+      //Serial.println("Pulverizador desligado");
       controlSpray = 0;
   }
 }
@@ -218,7 +198,7 @@ void controless() {
         M_Dir_Dir = 1;
         M_Speed_Esq = abs(rcCH2) / soft_nav;
         M_Speed_Dir = abs(rcCH2) / soft_nav;
-        state = 1;
+        //state = 1;
         pulverizar();
 
         if (rcCH1 > zona_morta) {
@@ -266,9 +246,6 @@ void controless() {
       break;
   }
 
-  Serial.println(estado);
-
-
   pulverizar();
 
   M_Speed_Dir = M_Speed_Dir + rcCH3;
@@ -277,13 +254,32 @@ void controless() {
   M_Speed_Dir = constrain(M_Speed_Dir, 0, 255);
   M_Speed_Esq = constrain(M_Speed_Esq, 0, 255);
   controlSpray = constrain(controlSpray, 0, 255);
-
+/*
   Serial.print("Vel_LEFT ");
   Serial.print(M_Speed_Esq);
   Serial.print(" Vel_RIGH: ");
   Serial.println(M_Speed_Dir);
-
+*/
   mControl_Dir(M_Speed_Dir, M_Dir_Dir);
   mControl_Esq(M_Speed_Esq, M_Dir_Esq);
   cSpray(controlSpray);
+}
+
+void rotacoes(){
+  if (millis() - tempoAnterior >= 100) { // Verifica se passou 1 segundo
+    detachInterrupt(digitalPinToInterrupt(pinEntrada)); // Desabilita a interrupção
+    rpm = contPulsos * 1 / 100; // Calcula as RPM
+    Serial.print("RPM: "); // Imprime a mensagem
+    Serial.println(rpm); // Imprime as RPM
+    Serial.print("pulsos: ");
+    Serial.println(pulsos);
+    contPulsos = 0; // Zera a variável de contagem de pulsos
+    tempoAnterior = millis(); // Atualiza o tempo anterior
+    attachInterrupt(digitalPinToInterrupt(pinEntrada), contarPulso, RISING); // Habilita a interrupção novamente
+  }
+}
+
+void contarPulso() {
+  contPulsos++; // Incrementa a variável de contagem de pulsos
+  pulsos++;
 }
