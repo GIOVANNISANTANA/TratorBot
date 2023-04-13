@@ -4,7 +4,7 @@
 #define soft 5
 #define soft_nav 2
 
-const int pinEntrada = 21; // Define o pino de entrada dos pulsos ocm interrupção
+const int pinEntrada = 52; // Define o pino de entrada dos pulsos ocm interrupção
 volatile unsigned int contPulsos = 0; // Variável que conta os pulsos
 unsigned long tempoAnterior = 0; // Variável que armazena o tempo anterior
 unsigned int rpm = 0; // Variável que armazena as RPM
@@ -23,17 +23,17 @@ int rcCH5 = 0;   // VRA Pot esquero, Definir potencia do pulverizador
 int rcCH6 = 0;   // VRB Pot direito, Definir potencia do adubador
 
 // Motor RIGHT Control Connections
-const byte R_PWM_DIR = 7;  //   VERDE
-const byte L_PWM_DIR = 6;  //   LARANJA
-const byte R_EN_DIR = 5;   //   AMARELO
+const byte R_PWM_DIR = 8;  //   VERDE
+const byte L_PWM_DIR = 9;  //   LARANJA
+const byte R_EN_DIR = 10;   //   AMARELO
 
 // Motor LEFT Control Connections
-const byte R_PWM_ESQ = 4;
-const byte L_PWM_ESQ = 3;
-const byte L_EN_ESQ = 2;
+const byte R_PWM_ESQ = 11;
+const byte L_PWM_ESQ = 12;
+const byte L_EN_ESQ = 13;
 
 //SPRAY PWM output
-const byte Spray = 8;
+const byte Spray = 7;
 
 // Sensor de corrente para os motores
 const int Sensor_I_M_DIR = A1;
@@ -120,6 +120,7 @@ bool readSwitch(byte channelInput, bool defaultValue) {
 }
 
 void setup() {
+  pinMode(Spray, OUTPUT);
   pinMode(R_PWM_DIR, OUTPUT);
   pinMode(L_PWM_DIR, OUTPUT);
   pinMode(R_EN_DIR, OUTPUT);
@@ -132,18 +133,19 @@ void setup() {
   pinMode(Sensor_I_M_ESQ, INPUT);
   pinMode(Sensor_V_BAT, INPUT);
 
+
   // Start serial monitor for debugging
   Serial.begin(115200);
   // Attach iBus object to serial port
   ibus.begin(Serial1);
 
   attachInterrupt(digitalPinToInterrupt(pinEntrada), contarPulso, RISING); // Configura a interrupção
-
-
 }
 
 void loop() {
+
   att_canais();
+  //cSpray(rcCH5);
   //Mostrar();
   controless();
   rotacoes();
@@ -198,7 +200,7 @@ void controless() {
         M_Dir_Dir = 1;
         M_Speed_Esq = abs(rcCH2) / soft_nav;
         M_Speed_Dir = abs(rcCH2) / soft_nav;
-        //state = 1;
+        state = 1;
         pulverizar();
 
         if (rcCH1 > zona_morta) {
@@ -215,6 +217,7 @@ void controless() {
       if (rcCH1 <= zona_morta && rcCH1 >= -zona_morta && rcCH2 <= zona_morta && rcCH2 >= -zona_morta) {
         estado = 0;
       } else if (rcCH2 < zona_morta) {
+        state = 0;
         M_Dir_Esq = 0;
         M_Dir_Dir = 0;
         M_Speed_Esq = abs(rcCH2) / soft_nav;
@@ -232,6 +235,7 @@ void controless() {
     case 3:
       if (rcCH1 <= zona_morta && rcCH1 >= -zona_morta && rcCH2 <= zona_morta && rcCH2 >= -zona_morta) {
         estado = 0;
+        state = 0;
       } else if (rcCH1 > zona_morta) {
         M_Dir_Esq = 1;
         M_Dir_Dir = 0;
@@ -266,7 +270,7 @@ void controless() {
 }
 
 void rotacoes(){
-  if (millis() - tempoAnterior >= 100) { // Verifica se passou 1 segundo
+  if (millis() - tempoAnterior >= 100) { // Verifica se passou 100 mili segundos
     detachInterrupt(digitalPinToInterrupt(pinEntrada)); // Desabilita a interrupção
     rpm = contPulsos * 1 / 100; // Calcula as RPM
     Serial.print("RPM: "); // Imprime a mensagem
