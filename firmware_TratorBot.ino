@@ -4,6 +4,12 @@
 #define soft 5
 #define soft_nav 2
 
+// motor de passo
+const int pulPlusPin = 4;
+const int dirPlusPin = 5;
+const int enablePlusPin = 6;
+unsigned int v_motor = 100;
+
 const int pinEntrada = 52; // Define o pino de entrada dos pulsos ocm interrupção
 volatile unsigned int contPulsos = 0; // Variável que conta os pulsos
 unsigned long tempoAnterior = 0; // Variável que armazena o tempo anterior
@@ -120,6 +126,10 @@ bool readSwitch(byte channelInput, bool defaultValue) {
 }
 
 void setup() {
+  pinMode(pulPlusPin, OUTPUT);
+  pinMode(dirPlusPin, OUTPUT);
+  pinMode(enablePlusPin, OUTPUT);
+  
   pinMode(Spray, OUTPUT);
   pinMode(R_PWM_DIR, OUTPUT);
   pinMode(L_PWM_DIR, OUTPUT);
@@ -146,9 +156,10 @@ void loop() {
 
   att_canais();
   //cSpray(rcCH5);
-  //Mostrar();
+  //mostrar();
   controless();
-  rotacoes();
+  //rotacoes();
+  //pulso(10);
 }
 
 void att_canais() {
@@ -158,9 +169,42 @@ void att_canais() {
   rcCH4 = readChannel(3, 0, 100, 0);
   rcCH5 = readChannel(4, 0, 255, 0);
   rcCH6 = readChannel(5, 0, 255, 0);
+  rcCH2 = rcCH2 + rcCH3;
+}
+
+//void pulso(unsigned int pulso_aux){
+//  int i = 0;
+//  digitalWrite (dirPlusPin,HIGH); //DIREÇÃO HORÁRIA
+//  if(state==1){
+//    digitalWrite (enablePlusPin, LOW);
+//  }else digitalWrite(enablePlusPin,HIGH);
+//  //Serial.println("PULSO");
+//  //Serial.println(pulso_aux);
+//  for (i = 0; i <= pulso_aux; i++){
+//   // Serial.println(i);
+//    tone(pulPlusPin,v_motor);
+//  }
+//  digitalWrite(pulPlusPin,HIGH);
+//  
+//  
+//}
+
+void pulso(int pulso_aux){
+  for (int i = 0; i < pulso_aux; i++) {
+  // Define a direção do movimento
+  digitalWrite(dirPlusPin, HIGH); // Direção horária
+  //digitalWrite(dirPlusPin, LOW); // Direção anti-horária
+  // Gera um pulso de clock para avançar um passo
+  digitalWrite(pulPlusPin, HIGH);
+  delayMicroseconds(v_motor);
+  digitalWrite(pulPlusPin, LOW);
+  delayMicroseconds(v_motor);
+  digitalWrite(enablePlusPin, LOW);
+  }
 }
 
 void pulverizar() {
+  int v_motor_aux = 0;
   if (rcCH5 > 10 && state == 1) {
     //Serial.println("Pulverizador acionado");
     controlSpray = rcCH5;
@@ -168,6 +212,20 @@ void pulverizar() {
       //Serial.println("Pulverizador desligado");
       controlSpray = 0;
   }
+  if (rcCH6 > 10 && state == 1) {
+    //Serial.println("Pulverizador acionado");
+    v_motor_aux = map(rcCH2,0,255,0,110);
+    constrain(v_motor_aux,0,100);
+    v_motor = rcCH6*v_motor_aux;
+    Serial.println(rcCH6);
+    v_motor = map(v_motor,0,27000,1000,10);
+    
+    pulso(5);
+  } else {
+      //Serial.println("Pulverizador desligado");
+      //controlSpray = 0;
+  }
+  
 }
 
 void controless() {
@@ -252,8 +310,8 @@ void controless() {
 
   pulverizar();
 
-  M_Speed_Dir = M_Speed_Dir + rcCH3;
-  M_Speed_Esq = M_Speed_Esq + rcCH3;
+  M_Speed_Dir = M_Speed_Dir;
+  M_Speed_Esq = M_Speed_Esq;
 
   M_Speed_Dir = constrain(M_Speed_Dir, 0, 255);
   M_Speed_Esq = constrain(M_Speed_Esq, 0, 255);
@@ -282,7 +340,7 @@ void rotacoes(){
     attachInterrupt(digitalPinToInterrupt(pinEntrada), contarPulso, RISING); // Habilita a interrupção novamente
   }
 }
-
+  
 void contarPulso() {
   contPulsos++; // Incrementa a variável de contagem de pulsos
   pulsos++;
